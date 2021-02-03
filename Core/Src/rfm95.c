@@ -107,6 +107,8 @@ uint8_t rfm95_init( rfm95_t *dev, uint32_t seed ) {
 
   //PA pin (maximal power)
   rfm95_write(dev, 0x09, 0xFF);
+  // WARNING: can overload transmitter. See datasheet, 5.4.3. High Power +20 dBm Operation
+  // rfm95_write(dev, 0x4d, 0x87);
 
   //BW = 125 kHz, Coding rate 4/5, Explicit header mode
   rfm95_write(dev, 0x1D, 0x72);
@@ -164,7 +166,7 @@ uint8_t rfm95_write( rfm95_t *dev, uint8_t addr, uint8_t data ) {
 
 /*
 *****************************************************************************************
-* Description : Funtion that reads a register from the RFM and returns the value
+* Description : Function that reads a register from the RFM and returns the value
 *
 * Arguments   : RFM_Address Address of register to be read
 *
@@ -181,10 +183,95 @@ uint8_t rfm95_read( rfm95_t *dev, uint8_t addr ) {
 
 /*
 *****************************************************************************************
+* Description : Function for receiving a package with the RFM
+*
+* Arguments   : buffer:  Pointer to array with data to be read
+*               len:     Length of the buffer
+* Return      : number of received bytes
+*****************************************************************************************
+*/
+
+uint32_t rfm95_recv( rfm95_t *dev, uint8_t *buffer, uint32_t len, signal_t *sig ) {
+  if( len == 0 || buffer == 0 ) {
+	  return 0; // No place to store data
+  }
+
+  if( len > 0xff ) {
+	  len = 0xff;
+  }
+
+  //Set RFM in Standby mode wait on mode ready
+  rfm95_write(dev, 0x01, 0x81);
+
+  //Wait for Ready
+  uint8_t max_wait = 200;
+  while (max_wait && !(*dev->pin_read)(dev->dio5_pin_id) ) {
+    max_wait--;
+    (*dev->delay)(1);
+  }
+  if( !max_wait ) putstr("dio5! ");
+
+  //Switch DIO0 to RxDone
+  rfm95_write(dev, 0x40, 0x00);
+
+  //rfm95_freq(dev, rand1() % 8);
+  rfm95_freq(dev, 2); // channel 2 is highest freq (868.5MHz) with 1% allowed usage per hour in germany
+
+  //SF7 BW 125 kHz
+  rfm95_write(dev, 0x1E, 0x74); //SF7 CRC On
+  rfm95_write(dev, 0x1D, 0x72); //125 kHz 4/5 coding rate explicit header mode
+  rfm95_write(dev, 0x26, 0x04); //Low datarate optimization off AGC auto on
+
+  //Set IQ to normal values
+  rfm95_write(dev, 0x33, 0x27);
+  rfm95_write(dev, 0x3B, 0x1D);
+
+  //Set payload length to the buffer length (max 0xff)
+  rfm95_write(dev, 0x22, len);
+
+  // Clear interrupts and enable RxDone and Timeout interrupts
+  rfm95_write(dev, 0x12, 0xff);
+  rfm95_write(dev, 0x11, 0x9f);	// mask all but RxDone & Timeout irqs
+
+  //Set SPI pointer to start of Rx part in FiFo
+  rfm95_write(dev, 0x0D, 0x00);
+
+  //now wait for data
+  rfm95_write(dev, 0x01, 0x05);
+
+  while( !(*dev->pin_read)(dev->dio0_pin_id) );
+
+  uint8_t flags = rfm95_read(dev, 0x12);
+  if( sig ) {
+	  sig->flags = flags;
+	  sig->snr = - (int)rfm95_read(dev, 0x19) / 4;
+	  sig->rssi = -137 + rfm95_read(dev, 0x1a);
+  }
+
+  uint32_t received = 0;
+  if( flags == 0x40 ) {
+	  uint8_t addr = rfm95_read(dev, 0x10); // current rx fifo addr
+	  rfm95_write(dev, 0x0D, addr);
+	  received = rfm95_read(dev, 0x13);
+	  if( received > len ) {
+		received = len;
+	  }
+	  (*dev->spi_read)(dev->nss_pin_id, 0, buffer, received);
+  }
+
+  rfm95_write(dev, 0x12, 0xff); // clear interrupt flags again
+
+  return received;
+}
+
+
+/*
+*****************************************************************************************
 * Description : Function for sending a package with the RFM
 *
 * Arguments   : buffer:  Pointer to array with data to be send
 *               len:     Length of the package to send
+* Return      : frequency used
 *****************************************************************************************
 */
 
@@ -198,15 +285,13 @@ uint32_t rfm95_send( rfm95_t *dev, uint8_t *buffer, uint32_t len ) {
   //Set RFM in Standby mode wait on mode ready
   rfm95_write(dev, 0x01, 0x81);
 
-  // while (digitalRead(DIO5) == LOW);
-  //Wait for TxDone
+  //Wait for Ready
   uint8_t max_wait = 200;
   while (max_wait && !(*dev->pin_read)(dev->dio5_pin_id) ) {
     max_wait--;
     (*dev->delay)(1);
   }
   if( !max_wait ) putstr("dio5! ");
-  // (*dev->delay)(10);
 
   //Switch DIO0 to TxDone
   rfm95_write(dev, 0x40, 0x40);
@@ -223,7 +308,8 @@ uint32_t rfm95_send( rfm95_t *dev, uint8_t *buffer, uint32_t len ) {
   _rfm95.RFM_Write(0x08,0x8B);
   */
 
-  rfm95_freq(dev, rand1() % 8);
+  //rfm95_freq(dev, rand1() % 8);
+  rfm95_freq(dev, 2); // channel 2 is highest freq (868.5MHz) with 1% allowed usage per hour in germany
 
   //SF7 BW 125 kHz
   rfm95_write(dev, 0x1E, 0x74); //SF7 CRC On

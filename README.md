@@ -1,13 +1,13 @@
-# STM32L0TTN
+# STM32L0LoraTx
 
-Send BME280 data to TTN with STM32L0
+Send data to LoraRx node with STM32L0
 
 ## Build
 
-* Download and install STM32CubeIDE (as of now version 1.4.2)
+* Download and install STM32CubeIDE (as of now version 1.5.1)
 * Import this repo
 * Open .ioc file and select "Project/Generate Code" (should download needed "firmware" files for the chip from ST)
-* Build Release or Debug (currently RAM 95%, FLASH 88% used)
+* Build Release or Debug
 
 ## Wiring
 
@@ -23,13 +23,13 @@ Not checked without, but generally recommended to use a small ceramic (~10nF) an
 * Boot0 pulled to Gnd (~10k) to safely boot from flash
 * STLink for flashing and debug: SWD, SWC, Gnd, NRst (and could provide Vdd via JP1)
 
-### BME280
+### BME280 (not used for now)
 
 * SDA=MOSI, SDC=MISO, others should be obvious
 
 ### RFM95W
 
-* Ant=~8cm wire (vary length and position to get best average RSSI as reported by TTN)
+* Ant=~8cm wire (vary length and position to get best average RSSI as reported by LoraRx)
 * NSS=CS, others should be obvious
 
 ### Serial
@@ -78,13 +78,12 @@ He has links to reference, datasheet, errata and more. E.g.:
 
 ## Status
 
-Works fine. 
-Power consumption to be measured, but I expect it is lower than with ATTiny84
+Just started. 
 
 ## Todo
 
-* Sleep while waiting for sensor or transmitter (90% of the ~100ms active cycle is waiting)
-* Cut power of sensor and transmitter between measurements? Standby consumption is already quite low.
-* Check recommended hookup of STM32L011K4 (capacitors, boot mode lines, reset, ...?). Since it works, it is probably ok as described above :)
+* Provide more sensor data (probably more ADC stuff)
+* Move GPIO pins (CS, LED) to non-ADC pins to have them available for voltage measurements
+* LoraRx sister firmware for receiving the stuff we send here 
 * PCBs for coin cell or 2xAAA
 * 3D-printed housings

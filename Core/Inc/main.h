@@ -32,19 +32,21 @@ extern "C" {
 #include "stm32l0xx_ll_adc.h"
 #include "stm32l0xx_ll_lpuart.h"
 #include "stm32l0xx_ll_rcc.h"
-#include "stm32l0xx_hal.h"
-#include "stm32l0xx_ll_spi.h"
-#include "stm32l0xx_ll_system.h"
-#include "stm32l0xx_ll_gpio.h"
-#include "stm32l0xx_ll_exti.h"
+#include "stm32l0xx_ll_crs.h"
 #include "stm32l0xx_ll_bus.h"
+#include "stm32l0xx_ll_system.h"
+#include "stm32l0xx_ll_exti.h"
 #include "stm32l0xx_ll_cortex.h"
 #include "stm32l0xx_ll_utils.h"
 #include "stm32l0xx_ll_pwr.h"
 #include "stm32l0xx_ll_dma.h"
+#include "stm32l0xx_hal.h"
+#include "stm32l0xx_ll_spi.h"
+#include "stm32l0xx_ll_gpio.h"
 
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
+#include <stddef.h>
 
 /* USER CODE END Includes */
 
@@ -74,7 +76,7 @@ void puthex( uint8_t val );
 /* USER CODE END EFP */
 
 /* Private defines -----------------------------------------------------------*/
-#define INTERVAL_S 300
+#define INTERVAL_S 60
 #define RFM_D0_Pin LL_GPIO_PIN_0
 #define RFM_D0_GPIO_Port GPIOA
 #define LED_Pin LL_GPIO_PIN_2

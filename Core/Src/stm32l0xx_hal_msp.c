@@ -7,7 +7,7 @@
   ******************************************************************************
   * @attention
   *
-  * <h2><center>&copy; Copyright (c) 2020 STMicroelectronics.
+  * <h2><center>&copy; Copyright (c) 2021 STMicroelectronics.
   * All rights reserved.</center></h2>
   *
   * This software component is licensed by ST under BSD 3-Clause license,
@@ -75,56 +75,6 @@ void HAL_MspInit(void)
   /* USER CODE BEGIN MspInit 1 */
 
   /* USER CODE END MspInit 1 */
-}
-
-/**
-* @brief RTC MSP Initialization
-* This function configures the hardware resources used in this example
-* @param hrtc: RTC handle pointer
-* @retval None
-*/
-void HAL_RTC_MspInit(RTC_HandleTypeDef* hrtc)
-{
-  if(hrtc->Instance==RTC)
-  {
-  /* USER CODE BEGIN RTC_MspInit 0 */
-
-  /* USER CODE END RTC_MspInit 0 */
-    /* Peripheral clock enable */
-    __HAL_RCC_RTC_ENABLE();
-    /* RTC interrupt Init */
-    HAL_NVIC_SetPriority(RTC_IRQn, 0, 0);
-    HAL_NVIC_EnableIRQ(RTC_IRQn);
-  /* USER CODE BEGIN RTC_MspInit 1 */
-
-  /* USER CODE END RTC_MspInit 1 */
-  }
-
-}
-
-/**
-* @brief RTC MSP De-Initialization
-* This function freeze the hardware resources used in this example
-* @param hrtc: RTC handle pointer
-* @retval None
-*/
-void HAL_RTC_MspDeInit(RTC_HandleTypeDef* hrtc)
-{
-  if(hrtc->Instance==RTC)
-  {
-  /* USER CODE BEGIN RTC_MspDeInit 0 */
-
-  /* USER CODE END RTC_MspDeInit 0 */
-    /* Peripheral clock disable */
-    __HAL_RCC_RTC_DISABLE();
-
-    /* RTC interrupt DeInit */
-    HAL_NVIC_DisableIRQ(RTC_IRQn);
-  /* USER CODE BEGIN RTC_MspDeInit 1 */
-
-  /* USER CODE END RTC_MspDeInit 1 */
-  }
-
 }
 
 /* USER CODE BEGIN 1 */

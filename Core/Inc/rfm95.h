@@ -27,8 +27,12 @@ typedef struct rfm95 {
   rfm95_delay_fptr_t delay;
 } rfm95_t;
 
-uint8_t rfm95_init(rfm95_t *dev, uint32_t seed);
-uint32_t rfm95_send(rfm95_t *dev, uint8_t *buffer, uint32_t len);
+typedef struct signal { uint8_t flags; int8_t snr, rssi; } signal_t;
+
+
+uint8_t rfm95_init( rfm95_t *dev, uint32_t seed );
+uint32_t rfm95_send( rfm95_t *dev, uint8_t *buffer, uint32_t len );
+uint32_t rfm95_recv( rfm95_t *dev, uint8_t *buffer, uint32_t len, signal_t *sig );
 
 uint8_t rfm95_write(rfm95_t *dev, uint8_t addr, uint8_t data); // returns old register value
 uint8_t rfm95_read(rfm95_t *dev, uint8_t addr);
