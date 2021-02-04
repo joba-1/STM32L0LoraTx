@@ -191,20 +191,48 @@ uint8_t *serialize(uint8_t *data, uint32_t value, size_t size) {
 }
 
 
-uint16_t getVdda() {
-  LL_ADC_Enable(ADC1);
+/* Temperature sensor calibration value address */
+#define TEMP130_CAL_ADDR ((uint16_t*) ((uint32_t) 0x1FF8007E))
+#define TEMP30_CAL_ADDR ((uint16_t*) ((uint32_t) 0x1FF8007A))
+#define VDD_CALIB ((uint16_t) (300))
+#define VDD_APPLI ((uint16_t) (330))
 
+int32_t ComputeTemperature(uint32_t measure)
+{
+  int32_t temperature;
+  temperature = ((measure * VDD_APPLI / VDD_CALIB) - (int32_t) *TEMP30_CAL_ADDR );
+  temperature = temperature * (int32_t)(130 - 30);
+  temperature = temperature / (int32_t)(*TEMP130_CAL_ADDR - *TEMP30_CAL_ADDR);
+  temperature = temperature + 30;
+  return(temperature);
+}
+
+void getAdc( uint32_t *mvbat, uint32_t *mvaccu, uint32_t *mvcc, uint32_t *dcelsius ) {
+  LL_ADC_Enable(ADC1);
   while( !LL_ADC_IsActiveFlag_ADRDY(ADC1) );
+
   LL_ADC_REG_StartConversion(ADC1);
   while( !LL_ADC_IsActiveFlag_EOC(ADC1) );
+  *mvbat = LL_ADC_REG_ReadConversionData12(ADC1);
 
-  uint16_t mV = LL_ADC_REG_ReadConversionData12(ADC1);
-  mV = VREFINT_CAL_VREF * (*VREFINT_CAL_ADDR) / mV;
+  LL_ADC_REG_StartConversion(ADC1);
+  while( !LL_ADC_IsActiveFlag_EOC(ADC1) );
+  *mvaccu = LL_ADC_REG_ReadConversionData12(ADC1);
+
+  LL_ADC_REG_StartConversion(ADC1);
+  while( !LL_ADC_IsActiveFlag_EOC(ADC1) );
+  *mvcc = LL_ADC_REG_ReadConversionData12(ADC1);
+  *mvcc = VREFINT_CAL_VREF * (*VREFINT_CAL_ADDR) / *mvcc;
+  *mvbat = *mvcc * *mvbat / 4095;
+  *mvaccu = *mvcc * *mvaccu / 4095;
+
+  LL_ADC_REG_StartConversion(ADC1);
+  while( !LL_ADC_IsActiveFlag_EOC(ADC1) );
+  *dcelsius = LL_ADC_REG_ReadConversionData12(ADC1);
+  *dcelsius = ComputeTemperature(*dcelsius);
 
   while( !LL_ADC_IsActiveFlag_EOS(ADC1) );
   LL_ADC_Disable(ADC1);
-
-  return mV;
 }
 
 /*
@@ -303,22 +331,31 @@ void lora_tx() {
     ///if( bme_read() ) {
     ///  bme_print();
 
-      payload.mVcc = getVdda();
-      putstr(" mV:"); putul(payload.mVcc);
+    uint32_t mvbat, mvaccu, mvcc, dcelsius;
+    getAdc( &mvbat, &mvaccu, &mvcc, &dcelsius );
+    payload.mVcc = mvcc;
+    payload.mVbat = mvbat;
+    payload.mVaccu = mvaccu;
+    payload.dCelsius = dcelsius;
 
-      // uint8_t Data[/* sizeof(bme280_data) + */ sizeof(frame_counter) + sizeof(mV)];
-      // uint8_t *data = Data;
-      // data = serialize(data, mV, sizeof(mV));
-      // data = serialize(data, frame_counter, sizeof(frame_counter));
-      ///data = serialize(data, (uint32_t)bme280_data.temperature, sizeof(bme280_data.temperature));
-      ///data = serialize(data, bme280_data.humidity, sizeof(bme280_data.humidity));
-      ///serialize(data, bme280_data.pressure, sizeof(bme280_data.pressure));
+    putstr(" mVcc:"); putul(payload.mVcc);
+    putstr(" mVbat:"); putul(payload.mVbat);
+    putstr(" mVaccu:"); putul(payload.mVaccu);
+    putstr(" dCelsius:"); putul(payload.dCelsius);
 
-      putstr(" send ");
-      payload_make_valid(&payload);
-      putul(rfm95_send(&rfm95_dev, (uint8_t *)&payload, sizeof(payload))/1000);
-      ///putul(lorawan_send_data(&lorawan, Data, sizeof(Data), frame_counter)/1000);
-      putstr(" kHz");
+    // uint8_t Data[/* sizeof(bme280_data) + */ sizeof(frame_counter) + sizeof(mV)];
+    // uint8_t *data = Data;
+    // data = serialize(data, mV, sizeof(mV));
+    // data = serialize(data, frame_counter, sizeof(frame_counter));
+    ///data = serialize(data, (uint32_t)bme280_data.temperature, sizeof(bme280_data.temperature));
+    ///data = serialize(data, bme280_data.humidity, sizeof(bme280_data.humidity));
+    ///serialize(data, bme280_data.pressure, sizeof(bme280_data.pressure));
+
+    putstr(" send ");
+    payload_make_valid(&payload);
+    putul(rfm95_send(&rfm95_dev, (uint8_t *)&payload, sizeof(payload))/1000);
+    ///putul(lorawan_send_data(&lorawan, Data, sizeof(Data), frame_counter)/1000);
+    putstr(" kHz");
     ///}
 
     LL_GPIO_ResetOutputPin(LED_GPIO_Port, LED_Pin);

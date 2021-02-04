@@ -77,12 +77,14 @@ void puthex( uint8_t val );
 
 /* Private defines -----------------------------------------------------------*/
 #define INTERVAL_S 60
+#define LED_Pin LL_GPIO_PIN_15
+#define LED_GPIO_Port GPIOC
 #define RFM_D0_Pin LL_GPIO_PIN_0
 #define RFM_D0_GPIO_Port GPIOA
-#define LED_Pin LL_GPIO_PIN_2
-#define LED_GPIO_Port GPIOA
-#define BME_CS_Pin LL_GPIO_PIN_3
-#define BME_CS_GPIO_Port GPIOA
+#define ADC_BAT_Pin LL_GPIO_PIN_2
+#define ADC_BAT_GPIO_Port GPIOA
+#define ADC_ACCU_Pin LL_GPIO_PIN_3
+#define ADC_ACCU_GPIO_Port GPIOA
 #define RFM_CS_Pin LL_GPIO_PIN_4
 #define RFM_CS_GPIO_Port GPIOA
 #define RFM_D5_Pin LL_GPIO_PIN_1
