@@ -451,7 +451,7 @@ int main(void)
 
   frame_counter = (uint16_t)HAL_RTCEx_BKUPRead(&hrtc, RTC_BKP_DR0);
 
-  putstr("\nStart ST32ML0LoraTRx 1.1 " __DATE__ " " __TIME__ " device 0x");
+  putstr("\nStart ST32ML0LoraTRx 1.2 " __DATE__ " " __TIME__ " device 0x");
   uint32_t *id_ptr = (uint32_t *)0x1FF80050;
   putlhex(*id_ptr);
   putlhex(*(id_ptr+1));
