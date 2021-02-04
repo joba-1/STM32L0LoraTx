@@ -30,6 +30,7 @@
 
 ///#include <bme280.h>
 #include <rfm95.h>
+#include <payload.h>
 ///#include <lorawan.h>
 ///#include <secconfig.h>
 
@@ -88,6 +89,7 @@ rfm95_t rfm95_dev;
 uint8_t rfm95_ver;
 ///lorawan_t lorawan;
 uint16_t frame_counter;
+payload_t payload = {0};
 
 /* USER CODE END PV */
 
@@ -301,19 +303,20 @@ void lora_tx() {
     ///if( bme_read() ) {
     ///  bme_print();
 
-      uint16_t mV = getVdda();
-      putstr(" mV:"); putul(mV);
+      payload.mVcc = getVdda();
+      putstr(" mV:"); putul(payload.mVcc);
 
-      uint8_t Data[/* sizeof(bme280_data) + */ sizeof(frame_counter) + sizeof(mV)];
-      uint8_t *data = Data;
-      data = serialize(data, mV, sizeof(mV));
-      data = serialize(data, frame_counter, sizeof(frame_counter));
+      // uint8_t Data[/* sizeof(bme280_data) + */ sizeof(frame_counter) + sizeof(mV)];
+      // uint8_t *data = Data;
+      // data = serialize(data, mV, sizeof(mV));
+      // data = serialize(data, frame_counter, sizeof(frame_counter));
       ///data = serialize(data, (uint32_t)bme280_data.temperature, sizeof(bme280_data.temperature));
       ///data = serialize(data, bme280_data.humidity, sizeof(bme280_data.humidity));
       ///serialize(data, bme280_data.pressure, sizeof(bme280_data.pressure));
 
       putstr(" send ");
-      putul(rfm95_send(&rfm95_dev, Data, data - Data)/1000);
+      payload_make_valid(&payload);
+      putul(rfm95_send(&rfm95_dev, (uint8_t *)&payload, sizeof(payload))/1000);
       ///putul(lorawan_send_data(&lorawan, Data, sizeof(Data), frame_counter)/1000);
       putstr(" kHz");
     ///}
@@ -322,6 +325,10 @@ void lora_tx() {
 
     if( frame_counter == QUIET_FRAME ) {
       putstr(" continue quietly\n");
+    }
+
+    if( frame_counter >= QUIET_FRAME ) {
+      HAL_RTCEx_SetWakeUpTimer_IT(&hrtc, INTERVAL_S * 5, RTC_WAKEUPCLOCK_CK_SPRE_16BITS);
     }
 
     HAL_RTCEx_BKUPWrite(&hrtc, RTC_BKP_DR0, ++frame_counter);
@@ -401,21 +408,19 @@ int main(void)
   MX_ADC_Init();
   /* USER CODE BEGIN 2 */
 
+  LL_GPIO_ResetOutputPin(LED_GPIO_Port, LED_Pin);
   ///LL_GPIO_SetOutputPin(pins[BME280_CS_PIN_ID].port, pins[BME280_CS_PIN_ID].pin);
   LL_GPIO_SetOutputPin(pins[RFM95_NSS_PIN_ID].port, pins[RFM95_NSS_PIN_ID].pin);
 
   frame_counter = (uint16_t)HAL_RTCEx_BKUPRead(&hrtc, RTC_BKP_DR0);
 
-  // After a few standby cycles don't waste power on led
-  if( frame_counter <= QUIET_FRAME ) {
-    LL_GPIO_SetOutputPin(LED_GPIO_Port, LED_Pin);
-  }
-
-  putstr("\nStart ST32ML0LoraTRx 1.0 " __DATE__ " " __TIME__ " device 0x");
+  putstr("\nStart ST32ML0LoraTRx 1.1 " __DATE__ " " __TIME__ " device 0x");
   uint32_t *id_ptr = (uint32_t *)0x1FF80050;
   putlhex(*id_ptr);
   putlhex(*(id_ptr+1));
   putlhex(*(id_ptr+5));
+  payload.id = *(id_ptr+5);
+
   ///for( unsigned i = 0; i < 4; i++ ) {
   ///  puthex(DevAddr[i]);
   ///}
@@ -431,6 +436,11 @@ int main(void)
     LL_mDelay(5000);
   }
 
+  // After a few standby cycles don't waste power on led
+  if( frame_counter <= QUIET_FRAME ) {
+    LL_GPIO_SetOutputPin(LED_GPIO_Port, LED_Pin);
+  }
+
   rfm_setup(frame_counter);
   ///bme_setup();
 
@@ -440,8 +450,8 @@ int main(void)
   /* USER CODE BEGIN WHILE */
   while (1)
   {
-    // lora_tx();
-    lora_rx();
+    lora_tx();
+    // lora_rx();
     /* USER CODE END WHILE */
 
     /* USER CODE BEGIN 3 */
