@@ -11,3 +11,9 @@ Core/Inc/secconfig.h
 *-bak
 /kicad/*.pro
 /kicad/*.zip
+HopeDuino*
+lora_?x.cpp
+*.launch
+*.log
+
+

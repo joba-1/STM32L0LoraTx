@@ -220,7 +220,7 @@ int32_t deci_celsius( uint32_t raw ) {
 }
 
 uint32_t getAdc( uint32_t *mvbat, uint32_t *mvaccu, uint32_t *mvcc, int32_t *dcelsius ) {
-  LL_ADC_SetCommonPathInternalCh(ADC1, LL_ADC_PATH_INTERNAL_VREFINT | LL_ADC_PATH_INTERNAL_TEMPSENSOR);
+  LL_ADC_SetCommonPathInternalCh(ADC1_COMMON, LL_ADC_PATH_INTERNAL_VREFINT | LL_ADC_PATH_INTERNAL_TEMPSENSOR);
   LL_ADC_Enable(ADC1);
   while( !LL_ADC_IsActiveFlag_ADRDY(ADC1) );
 
@@ -250,65 +250,6 @@ uint32_t getAdc( uint32_t *mvbat, uint32_t *mvaccu, uint32_t *mvcc, int32_t *dce
 
   return raw;
 }
-
-/*
-void bme_setup() {
-  bme280_dev.dev_id = BME280_CS_PIN_ID;
-  bme280_dev.intf = BME280_SPI_INTF;
-  bme280_dev.read = duplexSpi;
-  bme280_dev.write = duplexSpi;
-  bme280_dev.delay_ms = LL_mDelay;
-
-  int bme_init = 0;
-
-  while( !bme_init ) {
-    if (bme280_init(&bme280_dev) == BME280_OK) {
-      bme280_dev.settings.osr_h = BME280_OVERSAMPLING_1X;
-      bme280_dev.settings.osr_p = BME280_OVERSAMPLING_16X;
-      bme280_dev.settings.osr_t = BME280_OVERSAMPLING_2X;
-      bme280_dev.settings.filter = BME280_FILTER_COEFF_16;
-      if( bme280_set_sensor_settings(BME280_OSR_PRESS_SEL | BME280_OSR_TEMP_SEL | BME280_OSR_HUM_SEL | BME280_FILTER_SEL, &bme280_dev) == BME280_OK ) {
-        bme280_delay = bme280_cal_meas_delay(&bme280_dev.settings);
-        putstr(" BME delayMs:"); putul(bme280_delay);
-        if( bme280_delay ) {
-          bme_init = 1;
-        }
-      }
-      else {
-        putstr(" BME setup error!\n");
-      }
-    }
-    else {
-      putstr(" BME init error!\n");
-    }
-
-    if( ! bme_init ) {
-      LL_mDelay(1000);
-    }
-  }
-}
-
-
-int bme_read() {
-  bme280_data.humidity = 0;
-  if( bme280_set_sensor_mode(BME280_FORCED_MODE, &bme280_dev) == BME280_OK ) {
-    bme280_dev.delay_ms(bme280_delay);
-    bme280_get_sensor_data(BME280_ALL, &bme280_data, &bme280_dev);
-  }
-
-  return bme280_data.humidity >         0 && bme280_data.humidity  <= 100000
-      && bme280_data.pressure >     81000 && bme280_data.pressure  <  110000
-      && bme280_data.temperature > -50000 && bme280_data.temperature <= 9500;
-}
-
-
-void bme_print() {
-  putstr(" T:");      putul(bme280_data.temperature);
-  putstr(" c°C, H:"); putul(bme280_data.humidity);
-  putstr(" m%, P:");  putul(bme280_data.pressure);
-  putstr(" Pa");
-}
-*/
 
 void rfm_setup( uint32_t seed ) {
   rfm95_dev.nss_pin_id = RFM95_NSS_PIN_ID;
