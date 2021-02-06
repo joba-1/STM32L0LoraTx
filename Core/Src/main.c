@@ -132,6 +132,15 @@ void putul( unsigned long u ) {
 }
 
 
+void putl( long u ) {
+  if( u < 0 ) {
+    putstr("-");
+    u = -u;
+  }
+  putul(u);
+}
+
+
 void puthex( uint8_t val ) {
   if( frame_counter > QUIET_FRAME )  return;
   static char hex[] = "0123456789abcdef";
@@ -191,25 +200,30 @@ uint8_t *serialize(uint8_t *data, uint32_t value, size_t size) {
 }
 
 
-/* Temperature sensor calibration value address */
-#define TEMP130_CAL_ADDR ((uint16_t*) ((uint32_t) 0x1FF8007E))
-#define TEMP30_CAL_ADDR ((uint16_t*) ((uint32_t) 0x1FF8007A))
-#define VDD_CALIB ((uint16_t) (300))
-#define VDD_APPLI ((uint16_t) (330))
+// use my measured values at ambient temperature for calibration if CAL1 is not available (STM32L011)
+#ifndef TEMPSENSOR_CAL1_TEMP
+#define TEMPSENSOR_CAL1_TEMP 20
+#endif
+#ifndef TEMPSENSOR_CAL1_ADDR
+#define TEMPSENSOR_CAL1_RAW 1022
+#else
+#define TEMPSENSOR_CAL1_RAW (*TEMPSENSOR_CAL1_ADDR)
+#endif
 
-int32_t ComputeTemperature(uint32_t measure)
-{
-  int32_t temperature;
-  temperature = ((measure * VDD_APPLI / VDD_CALIB) - (int32_t) *TEMP30_CAL_ADDR );
-  temperature = temperature * (int32_t)(130 - 30);
-  temperature = temperature / (int32_t)(*TEMP130_CAL_ADDR - *TEMP30_CAL_ADDR);
-  temperature = temperature + 30;
-  return(temperature);
+int32_t deci_celsius( uint32_t raw ) {
+  int32_t dc = (int32_t)raw - TEMPSENSOR_CAL1_RAW;
+  dc *= (int32_t)TEMPSENSOR_CAL2_TEMP - TEMPSENSOR_CAL1_TEMP;
+  dc *= 10;
+  dc /= (int32_t)*TEMPSENSOR_CAL2_ADDR - TEMPSENSOR_CAL1_RAW;
+  dc += (int32_t)TEMPSENSOR_CAL1_TEMP * 10;
+  return dc;
 }
 
-void getAdc( uint32_t *mvbat, uint32_t *mvaccu, uint32_t *mvcc, uint32_t *dcelsius ) {
+uint32_t getAdc( uint32_t *mvbat, uint32_t *mvaccu, uint32_t *mvcc, int32_t *dcelsius ) {
+  LL_ADC_SetCommonPathInternalCh(ADC1, LL_ADC_PATH_INTERNAL_VREFINT | LL_ADC_PATH_INTERNAL_TEMPSENSOR);
   LL_ADC_Enable(ADC1);
   while( !LL_ADC_IsActiveFlag_ADRDY(ADC1) );
+
 
   LL_ADC_REG_StartConversion(ADC1);
   while( !LL_ADC_IsActiveFlag_EOC(ADC1) );
@@ -228,11 +242,13 @@ void getAdc( uint32_t *mvbat, uint32_t *mvaccu, uint32_t *mvcc, uint32_t *dcelsi
 
   LL_ADC_REG_StartConversion(ADC1);
   while( !LL_ADC_IsActiveFlag_EOC(ADC1) );
-  *dcelsius = LL_ADC_REG_ReadConversionData12(ADC1);
-  *dcelsius = ComputeTemperature(*dcelsius);
+  uint32_t raw = LL_ADC_REG_ReadConversionData12(ADC1);
+  *dcelsius = deci_celsius(raw);
 
   while( !LL_ADC_IsActiveFlag_EOS(ADC1) );
   LL_ADC_Disable(ADC1);
+
+  return raw;
 }
 
 /*
@@ -303,9 +319,9 @@ void rfm_setup( uint32_t seed ) {
   rfm95_dev.delay = LL_mDelay;
   rfm95_dev.pin_read = readPin;
 
-  while( rfm95_ver != 0x12 ) {
+  //while( rfm95_ver != 0x12 ) {
     rfm95_ver = rfm95_init(&rfm95_dev, seed);
-  }
+  //}
 
   ///lorawan_init(&lorawan, &rfm95_dev);
   ///lorawan_set_keys(&lorawan, NwkSkey, AppSkey, DevAddr);
@@ -331,17 +347,20 @@ void lora_tx() {
     ///if( bme_read() ) {
     ///  bme_print();
 
-    uint32_t mvbat, mvaccu, mvcc, dcelsius;
-    getAdc( &mvbat, &mvaccu, &mvcc, &dcelsius );
+    uint32_t mvbat = 0, mvaccu = 0, mvcc = 0;
+    int32_t dcelsius = 0;
+
+    uint32_t raw_temp = getAdc( &mvbat, &mvaccu, &mvcc, &dcelsius );
     payload.mVcc = mvcc;
     payload.mVbat = mvbat;
     payload.mVaccu = mvaccu;
-    payload.dCelsius = dcelsius;
+    payload.dCelsius = (int16_t)dcelsius;
 
     putstr(" mVcc:"); putul(payload.mVcc);
     putstr(" mVbat:"); putul(payload.mVbat);
     putstr(" mVaccu:"); putul(payload.mVaccu);
-    putstr(" dCelsius:"); putul(payload.dCelsius);
+    putstr(" dCelsius:"); putl(payload.dCelsius);
+    putstr(" rawTemp:"); putul(raw_temp);
 
     // uint8_t Data[/* sizeof(bme280_data) + */ sizeof(frame_counter) + sizeof(mV)];
     // uint8_t *data = Data;
@@ -445,7 +464,6 @@ int main(void)
   MX_ADC_Init();
   /* USER CODE BEGIN 2 */
 
-  LL_GPIO_ResetOutputPin(LED_GPIO_Port, LED_Pin);
   ///LL_GPIO_SetOutputPin(pins[BME280_CS_PIN_ID].port, pins[BME280_CS_PIN_ID].pin);
   LL_GPIO_SetOutputPin(pins[RFM95_NSS_PIN_ID].port, pins[RFM95_NSS_PIN_ID].pin);
 
@@ -453,8 +471,8 @@ int main(void)
 
   putstr("\nStart ST32ML0LoraTRx 1.2 " __DATE__ " " __TIME__ " device 0x");
   uint32_t *id_ptr = (uint32_t *)0x1FF80050;
-  putlhex(*id_ptr);
-  putlhex(*(id_ptr+1));
+  //putlhex(*id_ptr);
+  //putlhex(*(id_ptr+1));
   putlhex(*(id_ptr+5));
   payload.id = *(id_ptr+5);
 
@@ -470,7 +488,10 @@ int main(void)
     putstr(" from reset");
     // At first power on give a button cell a bit of time
     // to charge a capacitor before sending something to prevent boot loop
-    LL_mDelay(5000);
+    LL_GPIO_SetOutputPin(LED_GPIO_Port, LED_Pin);
+    LL_mDelay(10);
+    LL_GPIO_ResetOutputPin(LED_GPIO_Port, LED_Pin);
+    LL_mDelay(1000);
   }
 
   // After a few standby cycles don't waste power on led

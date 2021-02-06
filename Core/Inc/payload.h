@@ -15,7 +15,7 @@ typedef struct payload {
   uint16_t mVcc;
   uint16_t mVbat;
   uint16_t mVaccu;
-  uint16_t dCelsius;
+  int16_t dCelsius;
   uint32_t check;
 } payload_t;
 

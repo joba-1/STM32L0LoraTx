@@ -21,7 +21,7 @@ Not checked without, but generally recommended to use a small ceramic (~10nF) an
 * Vdd _and_ Vdda to 1.8-3.3V
 * Vss to Gnd
 * Boot0 pulled to Gnd (~10k) to safely boot from flash
-* STLink for flashing and debug: SWD, SWC, Gnd, NRst (and could provide Vdd via JP1)
+* STLink for flashing and debug: SWD, SWC, Gnd, NRst (also can provide Vdd via JP1 and STLink-Rx to L0-Tx for serial out)
 
 ### BME280 (not used for now)
 
@@ -29,7 +29,7 @@ Not checked without, but generally recommended to use a small ceramic (~10nF) an
 
 ### RFM95W
 
-* Ant=~8cm wire (vary length and position to get best average RSSI as reported by LoraRx)
+* Ant=~8cm wire (vary length and position to get best average RSSI as reported by LoraRx). 
 * NSS=CS, others should be obvious
 
 ### Serial

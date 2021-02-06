@@ -87,23 +87,28 @@ uint8_t rfm95_init( rfm95_t *dev, uint32_t seed ) {
   //Set RFM in LoRa mode
   rfm95_write(dev, 0x01, 0x80);
 
+  //DIO5 not 1MHz clock but ModeReady
+  rfm95_write(dev, 0x41, 0x00);
+
+  //DIO0 to TxDone
+  rfm95_write(dev, 0x40, 0x40);
+
   //Set RFM in Standby mode wait on mode ready
   rfm95_write(dev, 0x01, 0x81);
 
-  // while (digitalRead(DIO5) == LOW);
   uint8_t max_wait = 200;
+  (*dev->delay)(10);
   while (max_wait && !(*dev->pin_read)(dev->dio5_pin_id) ) {
     max_wait--;
     (*dev->delay)(1);
   }
   if( !max_wait ) putstr("dio5! ");
-  // (*dev->delay)(10);
 
   // while( rfm95_read(dev, 0x42) != 0x12 ); // check if we can communicate
 
   //Set carrier frequency
   // 868.100 MHz / 61.035 Hz = 14222987 = 0xD9068B
-  rfm95_freq(dev, 0);
+  rfm95_freq(dev, 2);
 
   //PA pin (maximal power)
   rfm95_write(dev, 0x09, 0xFF);
@@ -205,6 +210,7 @@ uint32_t rfm95_recv( rfm95_t *dev, uint8_t *buffer, uint32_t len, signal_t *sig 
 
   //Wait for Ready
   uint8_t max_wait = 200;
+  (*dev->delay)(10);
   while (max_wait && !(*dev->pin_read)(dev->dio5_pin_id) ) {
     max_wait--;
     (*dev->delay)(1);
@@ -287,6 +293,7 @@ uint32_t rfm95_send( rfm95_t *dev, uint8_t *buffer, uint32_t len ) {
 
   //Wait for Ready
   uint8_t max_wait = 200;
+  (*dev->delay)(10);
   while (max_wait && !(*dev->pin_read)(dev->dio5_pin_id) ) {
     max_wait--;
     (*dev->delay)(1);
@@ -300,16 +307,8 @@ uint32_t rfm95_send( rfm95_t *dev, uint8_t *buffer, uint32_t len ) {
 
   //Set carrier frequency
 
-  /*
-  fixed frequency
-  // 868.100 MHz / 61.035 Hz = 14222987 = 0xD9068B
-  _rfm95.RFM_Write(0x06,0xD9);
-  _rfm95.RFM_Write(0x07,0x06);
-  _rfm95.RFM_Write(0x08,0x8B);
-  */
-
-  //rfm95_freq(dev, rand1() % 8);
-  rfm95_freq(dev, 2); // channel 2 is highest freq (868.5MHz) with 1% allowed usage per hour in germany
+  //rfm95_freq(dev, rand1() % 8); // random frequency as required by LoraWAN
+  rfm95_freq(dev, 2); // channel 2 is highest frequency (868.5MHz) with 1% allowed usage per hour in Germany
 
   //SF7 BW 125 kHz
   rfm95_write(dev, 0x1E, 0x74); //SF7 CRC On
@@ -340,6 +339,7 @@ uint32_t rfm95_send( rfm95_t *dev, uint8_t *buffer, uint32_t len ) {
 
   //Wait for TxDone
   max_wait = 200;
+  (*dev->delay)(10);
   while (max_wait && !(*dev->pin_read)(dev->dio0_pin_id) ) {
     max_wait--;
     (*dev->delay)(1);
