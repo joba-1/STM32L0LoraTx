@@ -219,7 +219,7 @@ int32_t deci_celsius( uint32_t raw ) {
   return dc;
 }
 
-uint32_t getAdc( uint32_t *mvbat, uint32_t *mvaccu, uint32_t *mvcc, int32_t *dcelsius ) {
+uint32_t getAdc( int32_t *mvbat, int32_t *mvaccu, int32_t *mvcc, int32_t *dcelsius ) {
   LL_ADC_SetCommonPathInternalCh(ADC1_COMMON, LL_ADC_PATH_INTERNAL_VREFINT | LL_ADC_PATH_INTERNAL_TEMPSENSOR);
   LL_ADC_Enable(ADC1);
   while( !LL_ADC_IsActiveFlag_ADRDY(ADC1) );
@@ -227,18 +227,31 @@ uint32_t getAdc( uint32_t *mvbat, uint32_t *mvaccu, uint32_t *mvcc, int32_t *dce
 
   LL_ADC_REG_StartConversion(ADC1);
   while( !LL_ADC_IsActiveFlag_EOC(ADC1) );
-  *mvbat = LL_ADC_REG_ReadConversionData12(ADC1);
+  *mvbat = (int32_t)LL_ADC_REG_ReadConversionData12(ADC1);
 
   LL_ADC_REG_StartConversion(ADC1);
   while( !LL_ADC_IsActiveFlag_EOC(ADC1) );
-  *mvaccu = LL_ADC_REG_ReadConversionData12(ADC1);
+  *mvaccu = (int32_t)LL_ADC_REG_ReadConversionData12(ADC1);
 
   LL_ADC_REG_StartConversion(ADC1);
   while( !LL_ADC_IsActiveFlag_EOC(ADC1) );
-  *mvcc = LL_ADC_REG_ReadConversionData12(ADC1);
+  *mvcc = (int32_t)LL_ADC_REG_ReadConversionData12(ADC1);
+
   *mvcc = VREFINT_CAL_VREF * (*VREFINT_CAL_ADDR) / *mvcc;
+
   *mvbat = *mvcc * *mvbat / 4095;
+  // 0V -> 100mV
+  *mvbat -= 100;
+  // 5V -> 1820
+  *mvbat *= 5000;
+  *mvbat /= 1820;
+
   *mvaccu = *mvcc * *mvaccu / 4095;
+  // 0V -> 100
+  *mvaccu -= 100;
+  // 12V -> 1635
+  *mvaccu *= 12000;
+  *mvaccu /= 1635;
 
   LL_ADC_REG_StartConversion(ADC1);
   while( !LL_ADC_IsActiveFlag_EOC(ADC1) );
@@ -288,8 +301,7 @@ void lora_tx() {
     ///if( bme_read() ) {
     ///  bme_print();
 
-    uint32_t mvbat = 0, mvaccu = 0, mvcc = 0;
-    int32_t dcelsius = 0;
+    int32_t mvbat = 0, mvaccu = 0, mvcc = 0, dcelsius = 0;
 
     uint32_t raw_temp = getAdc( &mvbat, &mvaccu, &mvcc, &dcelsius );
     payload.mVcc = mvcc;
@@ -297,9 +309,9 @@ void lora_tx() {
     payload.mVaccu = mvaccu;
     payload.dCelsius = (int16_t)dcelsius;
 
-    putstr(" mVcc:"); putul(payload.mVcc);
-    putstr(" mVbat:"); putul(payload.mVbat);
-    putstr(" mVaccu:"); putul(payload.mVaccu);
+    putstr(" mVcc:"); putl(payload.mVcc);
+    putstr(" mVbat:"); putl(payload.mVbat);
+    putstr(" mVaccu:"); putl(payload.mVaccu);
     putstr(" dCelsius:"); putl(payload.dCelsius);
     putstr(" rawTemp:"); putul(raw_temp);
 
@@ -410,16 +422,12 @@ int main(void)
 
   frame_counter = (uint16_t)HAL_RTCEx_BKUPRead(&hrtc, RTC_BKP_DR0);
 
-  putstr("\nStart ST32ML0LoraTRx 1.2 " __DATE__ " " __TIME__ " device 0x");
+  putstr("\nStart ST32ML0LoraTRx 1.3 " __DATE__ " " __TIME__ " device 0x");
   uint32_t *id_ptr = (uint32_t *)0x1FF80050;
   //putlhex(*id_ptr);
   //putlhex(*(id_ptr+1));
   putlhex(*(id_ptr+5));
   payload.id = *(id_ptr+5);
-
-  ///for( unsigned i = 0; i < 4; i++ ) {
-  ///  puthex(DevAddr[i]);
-  ///}
 
   if(__HAL_PWR_GET_FLAG(PWR_FLAG_SB) != RESET) {
     putstr(" from standby");
@@ -427,6 +435,7 @@ int main(void)
   }
   else {
     putstr(" from reset");
+    frame_counter = 0;
     // At first power on give a button cell a bit of time
     // to charge a capacitor before sending something to prevent boot loop
     LL_GPIO_SetOutputPin(LED_GPIO_Port, LED_Pin);
