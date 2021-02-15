@@ -248,10 +248,10 @@ uint32_t getAdc( int32_t *mvbat, int32_t *mvaccu, int32_t *mvcc, int32_t *dcelsi
 
   *mvaccu = *mvcc * *mvaccu / 4095;
   // 0V -> 100
-  *mvaccu -= 100;
-  // 12V -> 1635
+  *mvaccu -= 50;
+  // 12V -> 1620
   *mvaccu *= 12000;
-  *mvaccu /= 1635;
+  *mvaccu /= 1620;
 
   LL_ADC_REG_StartConversion(ADC1);
   while( !LL_ADC_IsActiveFlag_EOC(ADC1) );
