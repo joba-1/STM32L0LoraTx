@@ -85,7 +85,7 @@ void MX_ADC_Init(void)
   LL_ADC_Init(ADC1, &ADC_InitStruct);
 
   /* Enable ADC internal voltage regulator */
-  LL_ADC_EnableInternalRegulator(ADC1);
+  LL_ADC_EnableInternalRegulator(ADC);
   /* Delay for ADC internal voltage regulator stabilization. */
   /* Compute number of CPU cycles to wait for, from delay in us. */
   /* Note: Variable divided by 2 to compensate partially */

@@ -1,0 +1,9 @@
+ERC-Bericht (Fr 19 Feb 2021 19:21:19 CET, Kodierung UTF8 )
+
+***** Schaltplan /
+ErrType(3): Pin ist mit anderen Pins verbunden, wird jedoch von keinem angesteuert
+    @(242,57 mm, 57,15 mm): Pin 13 (Spg.eingang) von Bauteil U2 wird nicht angesteuert (Netz 4).
+ErrType(3): Pin ist mit anderen Pins verbunden, wird jedoch von keinem angesteuert
+    @(224,79 mm, 138,43 mm): Pin 1 (Spg.eingang) von Bauteil #PWR0109 wird nicht angesteuert (Netz 6).
+
+ ** ERC Meldungen: 2  Fehler 0  Warnungen 2

@@ -20,6 +20,7 @@
 /* Includes ------------------------------------------------------------------*/
 #include "main.h"
 #include "adc.h"
+#include "i2c.h"
 #include "usart.h"
 #include "rtc.h"
 #include "spi.h"
@@ -246,12 +247,11 @@ uint32_t getAdc( int32_t *mvbat, int32_t *mvaccu, int32_t *mvcc, int32_t *dcelsi
   *mvbat *= 5000;
   *mvbat /= 1820;
 
-  *mvaccu = *mvcc * *mvaccu / 4095;
-  // 0V -> 100
-  *mvaccu -= 50;
-  // 12V -> 1620
-  *mvaccu *= 12000;
-  *mvaccu /= 1620;
+  *mvaccu = *mvcc * *mvaccu / 4095; // compensate adc for varying vcc
+  *mvbat = *mvaccu; // testing...
+  *mvaccu -= 44; // fix compensated adc reading at 0V to 0
+  *mvaccu *= 12070; // actual voltage for linear calibration
+  *mvaccu /= 1541 - 44; // actual compensated adc reading at calibration voltage
 
   LL_ADC_REG_StartConversion(ADC1);
   while( !LL_ADC_IsActiveFlag_EOC(ADC1) );
@@ -415,6 +415,7 @@ int main(void)
   MX_RTC_Init();
   MX_SPI1_Init();
   MX_ADC_Init();
+  MX_I2C1_Init();
   /* USER CODE BEGIN 2 */
 
   ///LL_GPIO_SetOutputPin(pins[BME280_CS_PIN_ID].port, pins[BME280_CS_PIN_ID].pin);
@@ -423,7 +424,7 @@ int main(void)
   frame_counter = (uint16_t)HAL_RTCEx_BKUPRead(&hrtc, RTC_BKP_DR0);
 
   putstr("\nStart ST32ML0LoraTRx 1.3 " __DATE__ " " __TIME__ " device 0x");
-  uint32_t *id_ptr = (uint32_t *)0x1FF80050;
+  uint32_t *id_ptr = (uint32_t *)0x1FF80050; // address of stm32L0 chip id (at offsets 0, 1 and 5)
   //putlhex(*id_ptr);
   //putlhex(*(id_ptr+1));
   putlhex(*(id_ptr+5));
@@ -442,6 +443,12 @@ int main(void)
     LL_mDelay(10);
     LL_GPIO_ResetOutputPin(LED_GPIO_Port, LED_Pin);
     LL_mDelay(1000);
+
+    // Reset RFM chip - just to be sure...
+    LL_GPIO_ResetOutputPin(RFM_NRST_GPIO_Port, RFM_NRST_Pin);
+    LL_mDelay(1);
+    LL_GPIO_SetOutputPin(RFM_NRST_GPIO_Port, RFM_NRST_Pin);
+    LL_mDelay(5);
   }
 
   // After a few standby cycles don't waste power on led
@@ -520,6 +527,7 @@ void SystemClock_Config(void)
     Error_Handler();
   }
   LL_RCC_SetLPUARTClockSource(LL_RCC_LPUART1_CLKSOURCE_PCLK1);
+  LL_RCC_SetI2CClockSource(LL_RCC_I2C1_CLKSOURCE_PCLK1);
 }
 
 /* USER CODE BEGIN 4 */
