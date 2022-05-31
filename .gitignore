@@ -9,11 +9,10 @@ Core/Inc/secconfig.h
 /.settings/language.settings.xml
 *.bak
 *-bak
-/kicad/*.pro
-/kicad/*.zip
+*.pro
+*.zip
 HopeDuino*
 lora_?x.cpp
 *.launch
 *.log
-
 
