@@ -29,6 +29,7 @@ extern "C" {
 
 /* Includes ------------------------------------------------------------------*/
 #include "stm32l0xx_hal.h"
+
 #include "stm32l0xx_ll_adc.h"
 #include "stm32l0xx_ll_lpuart.h"
 #include "stm32l0xx_ll_rcc.h"
@@ -40,7 +41,6 @@ extern "C" {
 #include "stm32l0xx_ll_utils.h"
 #include "stm32l0xx_ll_pwr.h"
 #include "stm32l0xx_ll_dma.h"
-#include "stm32l0xx_hal.h"
 #include "stm32l0xx_ll_spi.h"
 #include "stm32l0xx_ll_gpio.h"
 
@@ -79,16 +79,16 @@ void puthex( uint8_t val );
 #define INTERVAL_S 60
 #define RFM_D5_Pin LL_GPIO_PIN_9
 #define RFM_D5_GPIO_Port GPIOB
-#define EXT_CS_Pin LL_GPIO_PIN_14
-#define EXT_CS_GPIO_Port GPIOC
+#define BME_CS_Pin LL_GPIO_PIN_14
+#define BME_CS_GPIO_Port GPIOC
 #define RFM_NRST_Pin LL_GPIO_PIN_15
 #define RFM_NRST_GPIO_Port GPIOC
 #define RFM_D0_Pin LL_GPIO_PIN_0
 #define RFM_D0_GPIO_Port GPIOA
-#define ADC_BAT_Pin LL_GPIO_PIN_2
-#define ADC_BAT_GPIO_Port GPIOA
-#define ADC_ACCU_Pin LL_GPIO_PIN_3
+#define ADC_ACCU_Pin LL_GPIO_PIN_2
 #define ADC_ACCU_GPIO_Port GPIOA
+#define ADC_BAT_Pin LL_GPIO_PIN_3
+#define ADC_BAT_GPIO_Port GPIOA
 #define LED_Pin LL_GPIO_PIN_4
 #define LED_GPIO_Port GPIOA
 #define RFM_CS_Pin LL_GPIO_PIN_1

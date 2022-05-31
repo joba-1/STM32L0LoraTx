@@ -27,6 +27,11 @@
 /* ADC init function */
 void MX_ADC_Init(void)
 {
+
+  /* USER CODE BEGIN ADC_Init 0 */
+
+  /* USER CODE END ADC_Init 0 */
+
   LL_ADC_REG_InitTypeDef ADC_REG_InitStruct = {0};
   LL_ADC_InitTypeDef ADC_InitStruct = {0};
 
@@ -40,16 +45,19 @@ void MX_ADC_Init(void)
   PA2   ------> ADC_IN2
   PA3   ------> ADC_IN3
   */
-  GPIO_InitStruct.Pin = ADC_BAT_Pin;
-  GPIO_InitStruct.Mode = LL_GPIO_MODE_ANALOG;
-  GPIO_InitStruct.Pull = LL_GPIO_PULL_NO;
-  LL_GPIO_Init(ADC_BAT_GPIO_Port, &GPIO_InitStruct);
-
   GPIO_InitStruct.Pin = ADC_ACCU_Pin;
   GPIO_InitStruct.Mode = LL_GPIO_MODE_ANALOG;
   GPIO_InitStruct.Pull = LL_GPIO_PULL_NO;
   LL_GPIO_Init(ADC_ACCU_GPIO_Port, &GPIO_InitStruct);
 
+  GPIO_InitStruct.Pin = ADC_BAT_Pin;
+  GPIO_InitStruct.Mode = LL_GPIO_MODE_ANALOG;
+  GPIO_InitStruct.Pull = LL_GPIO_PULL_NO;
+  LL_GPIO_Init(ADC_BAT_GPIO_Port, &GPIO_InitStruct);
+
+  /* USER CODE BEGIN ADC_Init 1 */
+
+  /* USER CODE END ADC_Init 1 */
   /** Configure Regular Channel
   */
   LL_ADC_REG_SetSequencerChAdd(ADC1, LL_ADC_CHANNEL_2);
@@ -72,9 +80,9 @@ void MX_ADC_Init(void)
   ADC_REG_InitStruct.DMATransfer = LL_ADC_REG_DMA_TRANSFER_NONE;
   ADC_REG_InitStruct.Overrun = LL_ADC_REG_OVR_DATA_OVERWRITTEN;
   LL_ADC_REG_Init(ADC1, &ADC_REG_InitStruct);
-  LL_ADC_SetSamplingTimeCommonChannels(ADC1, LL_ADC_SAMPLINGTIME_7CYCLES_5);
+  LL_ADC_SetSamplingTimeCommonChannels(ADC1, LL_ADC_SAMPLINGTIME_12CYCLES_5);
   LL_ADC_SetOverSamplingScope(ADC1, LL_ADC_OVS_DISABLE);
-  LL_ADC_REG_SetSequencerScanDirection(ADC1, LL_ADC_REG_SEQ_SCAN_DIR_FORWARD);
+  LL_ADC_REG_SetSequencerScanDirection(ADC1, LL_ADC_REG_SEQ_SCAN_DIR_BACKWARD);
   LL_ADC_SetCommonFrequencyMode(__LL_ADC_COMMON_INSTANCE(ADC1), LL_ADC_CLOCK_FREQ_MODE_LOW);
   LL_ADC_DisableIT_EOC(ADC1);
   LL_ADC_DisableIT_EOS(ADC1);
@@ -85,7 +93,7 @@ void MX_ADC_Init(void)
   LL_ADC_Init(ADC1, &ADC_InitStruct);
 
   /* Enable ADC internal voltage regulator */
-  LL_ADC_EnableInternalRegulator(ADC);
+  LL_ADC_EnableInternalRegulator(ADC1);
   /* Delay for ADC internal voltage regulator stabilization. */
   /* Compute number of CPU cycles to wait for, from delay in us. */
   /* Note: Variable divided by 2 to compensate partially */
@@ -98,6 +106,9 @@ void MX_ADC_Init(void)
   {
     wait_loop_index--;
   }
+  /* USER CODE BEGIN ADC_Init 2 */
+
+  /* USER CODE END ADC_Init 2 */
 
 }
 

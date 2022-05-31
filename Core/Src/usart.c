@@ -28,6 +28,11 @@
 
 void MX_LPUART1_UART_Init(void)
 {
+
+  /* USER CODE BEGIN LPUART1_Init 0 */
+
+  /* USER CODE END LPUART1_Init 0 */
+
   LL_LPUART_InitTypeDef LPUART_InitStruct = {0};
 
   LL_GPIO_InitTypeDef GPIO_InitStruct = {0};
@@ -47,6 +52,9 @@ void MX_LPUART1_UART_Init(void)
   GPIO_InitStruct.Alternate = LL_GPIO_AF_6;
   LL_GPIO_Init(GPIOA, &GPIO_InitStruct);
 
+  /* USER CODE BEGIN LPUART1_Init 1 */
+
+  /* USER CODE END LPUART1_Init 1 */
   LPUART_InitStruct.BaudRate = 115200;
   LPUART_InitStruct.DataWidth = LL_LPUART_DATAWIDTH_8B;
   LPUART_InitStruct.StopBits = LL_LPUART_STOPBITS_1;
@@ -60,6 +68,9 @@ void MX_LPUART1_UART_Init(void)
   LL_LPUART_DisableIT_ERROR(LPUART1);
   LL_LPUART_DisableCTSHWFlowCtrl(LPUART1);
   LL_LPUART_IsActiveFlag_CTS(LPUART1);
+  /* USER CODE BEGIN LPUART1_Init 2 */
+
+  /* USER CODE END LPUART1_Init 2 */
 
 }
 
