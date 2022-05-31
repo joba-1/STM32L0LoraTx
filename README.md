@@ -1,6 +1,6 @@
 # STM32L0LoraTx
 
-Send data to LoraRx node with STM32L0
+Firmware and PCB for a device that sends data with a STM32L0/RFM95, battery or solar powered, to a [LoraGW ESP8266/RFM95 node](https://github.com/joba-1/LoraGw)
 
 ## Build
 
@@ -23,7 +23,7 @@ Not checked without, but generally recommended to use a small ceramic (~10nF) an
 * Boot0 pulled to Gnd (~10k) to safely boot from flash
 * STLink for flashing and debug: SWD, SWC, Gnd, NRst (also can provide Vdd via JP1 and STLink-Rx to L0-Tx for serial out)
 
-### BME280 (not used for now)
+### BME280
 
 * SDA=MOSI, SDC=MISO, others should be obvious
 
@@ -78,12 +78,14 @@ He has links to reference, datasheet, errata and more. E.g.:
 
 ## Status
 
-Just started. 
+Working and sending LoRa packets to my LoraGW ESP8266 gateway (battery voltages and bme280 weather data)
+
+Two devices operating with 2 AA 1.5V batteries (so far using 0.2-0.4 V per year, so >5 years between battery swaps is more than realistic).
+They send battery voltage data from within a car trunc - not ideal for RF :) - to a nearby house with no signal problems.
+
+One device runs "forever" with a 3.7 Lipo ~1.6Ah, a ~3x8 cm² 5V solar cell and a small solar charger board (reducing vcc out a bit with a diode). No capacity problems during winter.
 
 ## Todo
 
-* Provide more sensor data (probably more ADC stuff)
+* Provide more sensor data (probably more ADC stuff and more generic)
 * Move GPIO pins (CS, LED) to non-ADC pins to have them available for voltage measurements
-* LoraRx sister firmware for receiving the stuff we send here 
-* PCBs for coin cell or 2xAAA
-* 3D-printed housings
